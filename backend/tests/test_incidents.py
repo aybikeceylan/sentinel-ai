@@ -36,3 +36,7 @@ def test_invalid_incident():
     )
 
     assert response.status_code == 422
+
+def test_get_incident_count():
+    response = client.get("/api/v1/incidents/count")
+    assert response.status_code == 200
