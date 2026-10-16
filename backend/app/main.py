@@ -1,6 +1,5 @@
 from fastapi import FastAPI
 from app.routers.incidents import router as incidents_router
-
 app = FastAPI(
     title="SentinelAI API",
     description="AI-powered production incident investigation",
@@ -8,6 +7,7 @@ app = FastAPI(
 )
 
 app.include_router(incidents_router)
+
 
 @app.get("/health")
 async def health_check():
