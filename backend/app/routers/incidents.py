@@ -4,6 +4,8 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, status
 
 from app.schemas.incident import Incident, IncidentCreate
+from app.repositories.incident_repository import IncidentRepository
+from app.services.incident_service import IncidentService
 
 
 router = APIRouter(
@@ -11,8 +13,8 @@ router = APIRouter(
     tags=["Incidents"],
 )
 
-# Temporary in-memory storage
-incidents_db: dict[UUID, Incident] = {}
+repository = IncidentRepository()
+service = IncidentService(repository)
 
 
 @router.post(
@@ -21,20 +23,22 @@ incidents_db: dict[UUID, Incident] = {}
     status_code=status.HTTP_201_CREATED,
 )
 async def create_incident(payload: IncidentCreate):
-    incident = Incident(**payload.model_dump())
-    incidents_db[incident.id] = incident
-
-    return incident
+    return service.create(payload)
 
 
 @router.get("", response_model=list[Incident])
 async def list_incidents():
-    return list(incidents_db.values())
+    return service.get_all()
+
+
+@router.get("/count")
+async def get_incident_count():
+    return {"count": service.count()}
 
 
 @router.get("/{incident_id}", response_model=Incident)
 async def get_incident(incident_id: UUID):
-    incident = incidents_db.get(incident_id)
+    incident = service.get_by_id(incident_id)
 
     if incident is None:
         raise HTTPException(
