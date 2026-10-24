@@ -38,7 +38,7 @@ def test_get_incident_metrics():
     assert metrics[0]["value"] == 0.02
     assert metrics[-1]["value"] == 0.42
 
-    # Aynı istekte yeni metrikler üretilmemeli
+    # Repeated requests must not generate new metrics
     second_response = client.get(
         f"/api/v1/incidents/{incident_id}/metrics"
     )

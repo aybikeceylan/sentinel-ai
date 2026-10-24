@@ -1,25 +1,31 @@
 
-import os
+from typing import Protocol
 
-from dotenv import load_dotenv
 from openai import OpenAI
 
 from app.schemas.investigation import InvestigationResult
 
 
-load_dotenv()
+INSTRUCTIONS = (
+    "You are a production incident investigator. "
+    "Analyze only the provided evidence. "
+    "Do not invent logs, metrics, or facts. "
+    "Distinguish hypotheses from confirmed causes. "
+    "If the evidence is insufficient, say so and use low confidence. "
+    "Return a structured investigation result."
+)
+
+
+class IncidentAnalyzer(Protocol):
+    model: str
+
+    def analyze(self, incident_data: str) -> InvestigationResult: ...
 
 
 class LLMClient:
-    def __init__(self):
-        self.client = OpenAI(
-            api_key=os.environ["OPENAI_API_KEY"]
-        )
-
-        self.model = os.getenv(
-            "OPENAI_MODEL",
-            "gpt-4.1-mini",
-        )
+    def __init__(self, client: OpenAI, model: str):
+        self.client = client
+        self.model = model
 
     def analyze(
         self,
@@ -28,13 +34,7 @@ class LLMClient:
 
         response = self.client.responses.parse(
             model=self.model,
-            instructions=(
-                "You are a production incident investigator. "
-                "Analyze only the provided evidence. "
-                "Do not invent logs, metrics, or facts. "
-                "Distinguish hypotheses from confirmed causes. "
-                "Return a structured investigation result."
-            ),
+            instructions=INSTRUCTIONS,
             input=incident_data,
             text_format=InvestigationResult,
         )

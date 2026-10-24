@@ -2,7 +2,11 @@
 from uuid import UUID
 
 from app.repositories.incident_repository import IncidentRepository
-from app.schemas.incident import Incident, IncidentCreate
+from app.schemas.incident import (
+    Incident,
+    IncidentCreate,
+    IncidentStatus,
+)
 
 
 class IncidentService:
@@ -21,3 +25,11 @@ class IncidentService:
 
     def count(self) -> int:
         return len(self.repository.find_all())
+
+    def update_status(
+        self,
+        incident: Incident,
+        status: IncidentStatus,
+    ) -> Incident:
+        updated = incident.model_copy(update={"status": status})
+        return self.repository.save(updated)
