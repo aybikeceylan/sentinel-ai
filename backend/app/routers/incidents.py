@@ -68,9 +68,9 @@ async def get_incident(incident_id: UUID):
     response_model=list[IncidentLog],
 )
 async def get_incident_logs(incident_id: UUID):
-    _get_incident_or_404(incident_id)
+    incident = _get_incident_or_404(incident_id)
 
-    return log_service.get_incident_logs(incident_id)
+    return log_service.get_incident_logs(incident)
 
 
 @router.get(
@@ -78,9 +78,9 @@ async def get_incident_logs(incident_id: UUID):
     response_model=list[IncidentMetric],
 )
 async def get_incident_metrics(incident_id: UUID):
-    _get_incident_or_404(incident_id)
+    incident = _get_incident_or_404(incident_id)
 
-    return metric_service.get_incident_metrics(incident_id)
+    return metric_service.get_incident_metrics(incident)
 
 
 @router.post(

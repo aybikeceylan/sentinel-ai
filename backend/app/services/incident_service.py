@@ -24,7 +24,7 @@ class IncidentService:
         return self.repository.find_by_id(incident_id)
 
     def count(self) -> int:
-        return len(self.repository.find_all())
+        return self.repository.count()
 
     def update_status(
         self,

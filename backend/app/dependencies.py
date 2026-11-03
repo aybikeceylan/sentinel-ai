@@ -1,13 +1,16 @@
 
 from functools import lru_cache
 
+import chromadb
+from chromadb.config import Settings
 from fastapi import HTTPException, status
 from openai import OpenAI
 
 from app import config
 from app.ai.embeddings import OpenAIEmbedder
 from app.ai.llm_client import LLMClient
-from app.ai.vector_store import InMemoryVectorStore
+from app.ai.vector_store import ChromaVectorStore, evidence_collection
+from app.db import Database
 from app.repositories.incident_repository import IncidentRepository
 from app.repositories.investigation_repository import (
     InvestigationRepository,
@@ -21,13 +24,14 @@ from app.services.log_service import LogService
 from app.services.metric_service import MetricService
 
 
-incident_service = IncidentService(IncidentRepository())
-log_service = LogService(LogRepository())
-metric_service = MetricService(MetricRepository())
+database = Database(config.database_path())
+
+incident_service = IncidentService(IncidentRepository(database))
+log_service = LogService(LogRepository(database))
+metric_service = MetricService(MetricRepository(database))
 evidence_service = EvidenceService(log_service, metric_service)
 
-vector_store = InMemoryVectorStore()
-investigation_repository = InvestigationRepository()
+investigation_repository = InvestigationRepository(database)
 
 
 @lru_cache
@@ -40,13 +44,21 @@ def get_investigation_service() -> InvestigationService:
             detail="OPENAI_API_KEY is not configured",
         )
 
-    client = OpenAI(api_key=api_key)
+    openai_client = OpenAI(api_key=api_key)
+    embedding_model = config.openai_embedding_model()
+
+    chroma_client = chromadb.PersistentClient(
+        path=config.chroma_path(),
+        settings=Settings(anonymized_telemetry=False),
+    )
 
     return InvestigationService(
         incident_service=incident_service,
         evidence_service=evidence_service,
-        embedder=OpenAIEmbedder(client, config.openai_embedding_model()),
-        vector_store=vector_store,
-        analyzer=LLMClient(client, config.openai_model()),
+        embedder=OpenAIEmbedder(openai_client, embedding_model),
+        vector_store=ChromaVectorStore(
+            evidence_collection(chroma_client, embedding_model)
+        ),
+        analyzer=LLMClient(openai_client, config.openai_model()),
         repository=investigation_repository,
     )

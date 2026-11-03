@@ -16,7 +16,7 @@ class EvidenceService:
         self.metric_service = metric_service
 
     def collect(self, incident: Incident) -> list[EvidenceChunk]:
-        logs = self.log_service.get_incident_logs(incident.id)
-        metrics = self.metric_service.get_incident_metrics(incident.id)
+        logs = self.log_service.get_incident_logs(incident)
+        metrics = self.metric_service.get_incident_metrics(incident)
 
         return build_evidence_chunks(incident, logs, metrics)

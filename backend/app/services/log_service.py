@@ -1,9 +1,8 @@
 
-from uuid import UUID
-
 from app.repositories.log_repository import LogRepository
+from app.schemas.incident import Incident
 from app.schemas.log import IncidentLog
-from app.simulators.auth_simulator import generate_auth_failure_logs
+from app.simulators.scenarios import generate_logs
 
 
 class LogService:
@@ -12,18 +11,18 @@ class LogService:
 
     def get_incident_logs(
         self,
-        incident_id: UUID,
+        incident: Incident,
     ) -> list[IncidentLog]:
 
         existing_logs = self.repository.find_by_incident_id(
-            incident_id
+            incident.id
         )
 
         if existing_logs:
             return existing_logs
 
-        logs = generate_auth_failure_logs(incident_id)
+        logs = generate_logs(incident.scenario, incident.id)
 
-        self.repository.save_many(incident_id, logs)
+        self.repository.save_many(incident.id, logs)
 
         return logs

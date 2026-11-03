@@ -1,6 +1,7 @@
 
 from collections import defaultdict
 from datetime import datetime
+from uuid import uuid5
 
 from app.schemas.evidence import EvidenceChunk, EvidenceSource
 from app.schemas.incident import Incident
@@ -26,6 +27,7 @@ def build_evidence_chunks(
 
 def _incident_chunk(incident: Incident) -> EvidenceChunk:
     return EvidenceChunk(
+        id=uuid5(incident.id, "incident"),
         incident_id=incident.id,
         source=EvidenceSource.INCIDENT,
         text=(
@@ -53,6 +55,7 @@ def _log_chunk(
         text = f"{text} ({details})"
 
     return EvidenceChunk(
+        id=log.id,
         incident_id=incident.id,
         source=EvidenceSource.LOG,
         text=text,
@@ -65,6 +68,7 @@ def _metric_chunk(
 ) -> EvidenceChunk:
 
     return EvidenceChunk(
+        id=metric.id,
         incident_id=incident.id,
         source=EvidenceSource.METRIC,
         text=(
@@ -95,6 +99,7 @@ def _metric_trend_chunks(
 
         chunks.append(
             EvidenceChunk(
+                id=uuid5(incident.id, f"trend:{service}:{metric_type}"),
                 incident_id=incident.id,
                 source=EvidenceSource.METRIC_TREND,
                 text=(

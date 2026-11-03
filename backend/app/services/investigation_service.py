@@ -4,7 +4,7 @@ from uuid import UUID
 from app.ai.embeddings import Embedder
 from app.ai.llm_client import IncidentAnalyzer
 from app.ai.prompt import build_investigation_prompt
-from app.ai.vector_store import InMemoryVectorStore
+from app.ai.vector_store import VectorStore
 from app.repositories.investigation_repository import (
     InvestigationRepository,
 )
@@ -23,7 +23,7 @@ class InvestigationService:
         incident_service: IncidentService,
         evidence_service: EvidenceService,
         embedder: Embedder,
-        vector_store: InMemoryVectorStore,
+        vector_store: VectorStore,
         analyzer: IncidentAnalyzer,
         repository: InvestigationRepository,
     ):

@@ -32,6 +32,18 @@ def test_build_evidence_chunks_covers_all_sources():
     assert all(chunk.incident_id == incident.id for chunk in chunks)
 
 
+def test_chunk_ids_are_stable_across_rebuilds():
+    incident = _incident()
+    logs = generate_auth_failure_logs(incident.id)
+    metrics = generate_auth_failure_metrics(incident.id)
+
+    first = build_evidence_chunks(incident, logs, metrics)
+    second = build_evidence_chunks(incident, logs, metrics)
+
+    assert [chunk.id for chunk in first] == [chunk.id for chunk in second]
+    assert len({chunk.id for chunk in first}) == len(first)
+
+
 def test_log_chunk_includes_metadata():
     incident = _incident()
     logs = generate_auth_failure_logs(incident.id)

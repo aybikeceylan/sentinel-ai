@@ -2,30 +2,39 @@
 
 Usage (from the backend directory):
     python -m scripts.run_investigation
+    python -m scripts.run_investigation --scenario cache_outage
     python -m scripts.run_investigation "Why are refresh tokens rejected?"
 """
 
+import argparse
 import json
-import sys
 
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.schemas.incident import IncidentScenario
+from app.simulators.scenarios import SAMPLE_INCIDENTS
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("question", nargs="?")
+    parser.add_argument(
+        "--scenario",
+        choices=[scenario.value for scenario in IncidentScenario],
+        default=IncidentScenario.AUTH_FAILURE.value,
+    )
+    args = parser.parse_args()
+
     client = TestClient(app)
+    sample = SAMPLE_INCIDENTS[IncidentScenario(args.scenario)]
 
     incident = client.post(
         "/api/v1/incidents",
-        json={
-            "title": "Authentication service failure",
-            "description": "Users receive 401 errors after deployment",
-            "severity": "high",
-        },
+        json=sample.model_dump(mode="json"),
     ).json()
 
-    body = {"question": sys.argv[1]} if len(sys.argv) > 1 else None
+    body = {"question": args.question} if args.question else None
 
     response = client.post(
         f"/api/v1/incidents/{incident['id']}/investigate",

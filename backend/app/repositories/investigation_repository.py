@@ -1,19 +1,36 @@
 
 from uuid import UUID
 
+from app.db import Database
 from app.schemas.investigation import InvestigationReport
 
 
 class InvestigationRepository:
-    def __init__(self):
-        self._reports: dict[UUID, list[InvestigationReport]] = {}
+    def __init__(self, database: Database):
+        self.database = database
 
     def save(self, report: InvestigationReport) -> InvestigationReport:
-        self._reports.setdefault(report.incident_id, []).append(report)
+        self.database.execute(
+            "INSERT INTO investigations (id, incident_id, data) "
+            "VALUES (?, ?, ?)",
+            (
+                str(report.id),
+                str(report.incident_id),
+                report.model_dump_json(),
+            ),
+        )
         return report
 
     def find_by_incident_id(
         self,
         incident_id: UUID,
     ) -> list[InvestigationReport]:
-        return list(self._reports.get(incident_id, []))
+        rows = self.database.execute(
+            "SELECT data FROM investigations WHERE incident_id = ? "
+            "ORDER BY rowid",
+            (str(incident_id),),
+        )
+        return [
+            InvestigationReport.model_validate_json(data)
+            for (data,) in rows
+        ]

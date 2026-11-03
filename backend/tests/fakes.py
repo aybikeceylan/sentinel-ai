@@ -16,6 +16,13 @@ VOCABULARY = [
     "error_rate",
     "threshold",
     "latency",
+    "connection",
+    "pool",
+    "timed out",
+    "redis",
+    "cluster",
+    "cache",
+    "database",
 ]
 
 

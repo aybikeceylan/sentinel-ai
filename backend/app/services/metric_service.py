@@ -1,11 +1,8 @@
 
-from uuid import UUID
-
 from app.repositories.metric_repository import MetricRepository
+from app.schemas.incident import Incident
 from app.schemas.metric import IncidentMetric
-from app.simulators.metrics_simulator import (
-    generate_auth_failure_metrics,
-)
+from app.simulators.scenarios import generate_metrics
 
 
 class MetricService:
@@ -14,18 +11,18 @@ class MetricService:
 
     def get_incident_metrics(
         self,
-        incident_id: UUID,
+        incident: Incident,
     ) -> list[IncidentMetric]:
 
         existing_metrics = self.repository.find_by_incident_id(
-            incident_id
+            incident.id
         )
 
         if existing_metrics:
             return existing_metrics
 
-        metrics = generate_auth_failure_metrics(incident_id)
+        metrics = generate_metrics(incident.scenario, incident.id)
 
-        self.repository.save_many(incident_id, metrics)
+        self.repository.save_many(incident.id, metrics)
 
         return metrics

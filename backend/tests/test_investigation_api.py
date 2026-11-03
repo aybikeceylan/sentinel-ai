@@ -3,7 +3,6 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app import dependencies
-from app.ai.vector_store import InMemoryVectorStore
 from app.main import app
 from app.services.investigation_service import InvestigationService
 from tests.fakes import FakeAnalyzer, KeywordEmbedder
@@ -13,7 +12,7 @@ client = TestClient(app)
 
 
 @pytest.fixture
-def fakes():
+def fakes(vector_store):
     embedder = KeywordEmbedder()
     analyzer = FakeAnalyzer()
 
@@ -21,7 +20,7 @@ def fakes():
         incident_service=dependencies.incident_service,
         evidence_service=dependencies.evidence_service,
         embedder=embedder,
-        vector_store=InMemoryVectorStore(),
+        vector_store=vector_store,
         analyzer=analyzer,
         repository=dependencies.investigation_repository,
     )
@@ -125,6 +124,33 @@ def test_investigation_updates_status_and_history(fakes):
 
     assert history.status_code == 200
     assert len(history.json()) == 1
+
+
+def test_investigate_uses_incident_scenario(fakes):
+    _, analyzer = fakes
+
+    response = client.post(
+        "/api/v1/incidents",
+        json={
+            "title": "Order API timing out",
+            "description": "Checkout requests fail with 504 errors",
+            "severity": "critical",
+            "scenario": "database_pool_exhaustion",
+        },
+    )
+    incident_id = response.json()["id"]
+
+    response = client.post(
+        f"/api/v1/incidents/{incident_id}/investigate",
+        json={"question": "Why is the connection pool timing out?"},
+    )
+
+    assert response.status_code == 201
+
+    prompt = analyzer.prompts[-1]
+
+    assert "connection pool" in prompt.lower()
+    assert "auth-service" not in prompt
 
 
 def test_investigate_unknown_incident(fakes):
